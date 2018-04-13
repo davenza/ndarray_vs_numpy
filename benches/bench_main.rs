@@ -1,40 +1,14 @@
 #[macro_use]
 extern crate criterion;
 extern crate ndarray;
+extern crate ndarray_rand;
 extern crate rand;
 
 use criterion::Criterion;
 use ndarray::prelude::*;
 use ndarray::Zip;
-use rand::{Rand, Rng};
-
-/// Returns an array view with `n_axis` axes with length 1 at the start of the shape.
-fn insert_axes_first<S>(array: &ArrayD<S>, n_axis: usize) -> ArrayViewD<S> {
-    let mut a = array.view();
-    for _ in 0..n_axis {
-        a = a.insert_axis(Axis(0))
-    }
-    a
-}
-
-/// Returns an array view with `n_axis` axes with length 1 at the end of the shape.
-fn insert_axes_end<S>(array: &ArrayD<S>, n_axis: usize) -> ArrayViewD<S> {
-    let mut a = array.view();
-    for _ in 0..n_axis {
-        let axis = Axis(a.ndim());
-        a = a.insert_axis(axis);
-    }
-    a
-}
-
-/// Generates a random array with the given shape.
-fn random_array<S: Rand>(shape: Vec<usize>) -> ArrayD<S> {
-    let n_elements = shape.iter().fold(1, |accum, &elem| accum * elem);
-    let mut rng = rand::thread_rng();
-    let numbers: Vec<S> = (0..n_elements).map(|_| rng.gen()).collect();
-
-    ArrayD::from_shape_vec(shape, numbers).unwrap()
-}
+use ndarray_rand::RandomExt;
+use rand::{Rand, distributions::Range};
 
 fn product(c: &mut Criterion) {
     c.bench_function_over_inputs(
@@ -42,17 +16,22 @@ fn product(c: &mut Criterion) {
         |b, &size| {
             // Number of axes to add on each matrix.
             let new_axes = size / 2;
-            let shape = vec![2; size];
-            let left = random_array::<f64>(shape.clone());
-            let right = random_array::<f64>(shape);
+            let mut rng = rand::thread_rng();
+            let left = {
+                let mut shape = vec![2; size];
+                shape.extend_from_slice(&vec![1; new_axes]);
+                ArrayD::<f64>::random_using(shape, Range::new(0., 1.), &mut rng)
+            };
+            let right = {
+                let mut shape = vec![1; new_axes];
+                shape.extend_from_slice(&vec![2; size]);
+                ArrayD::<f64>::random_using(shape, Range::new(0., 1.), &mut rng)
+            };
             // Expected cardinality of the product of the two arrays.
             let expected_card = vec![2; size + new_axes];
+
             b.iter_with_setup(
-                || {
-                    let left_view = insert_axes_end(&left, new_axes);
-                    let right_view = insert_axes_first(&right, new_axes);
-                    (left_view, right_view, expected_card.clone())
-                },
+                || (left.view(), right.view(), expected_card.clone()),
                 |(left_view, right_view, expected_card)| {
                     let mut out = unsafe { ArrayD::<f64>::uninitialized(expected_card) };
                     Zip::from(&mut out)
