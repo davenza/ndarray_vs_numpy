@@ -5,7 +5,7 @@ setup = '''
 import numpy as np
 
 size = {}
-new_axes = int(size/2)
+new_axes = size // 2
 matrix1 = np.random.random_sample(tuple([2]*size +  [1]*new_axes))
 matrix2 = np.random.random_sample(tuple([1]*new_axes + [2]*size))
 '''
