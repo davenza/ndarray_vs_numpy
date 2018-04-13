@@ -42,20 +42,20 @@ fn product(c: &mut Criterion) {
             // Number of axes to add on each matrix.
             let new_axes = size / 2;
             let shape = vec![2; size];
-            let zeros = random_array::<f64>(shape.clone());
-            let ones = random_array::<f64>(shape);
+            let left = random_array::<f64>(shape.clone());
+            let right = random_array::<f64>(shape);
             // Expected cardinality of the product of the two arrays.
             let expected_card = vec![2; size + new_axes];
             b.iter_with_setup(
                 || {
-                    let zeros_view = insert_axes_first(&zeros, new_axes);
-                    let ones_view = insert_axes_end(&ones, new_axes);
-                    (zeros_view, ones_view, expected_card.clone())
+                    let left_view = insert_axes_end(&left, new_axes);
+                    let right_view = insert_axes_first(&right, new_axes);
+                    (left_view, right_view, expected_card.clone())
                 },
-                |(zeros_view, ones_view, expected_card)| {
+                |(left_view, right_view, expected_card)| {
                     // Broadcasting the left hand side first.
-                    let zeros_view = zeros_view.broadcast(expected_card).unwrap();
-                    let _array = &zeros_view * &ones_view;
+                    let left_view = left_view.broadcast(expected_card).unwrap();
+                    let _array = &left_view * &right_view;
                 },
             )
         },
