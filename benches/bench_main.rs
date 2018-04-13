@@ -52,7 +52,7 @@ fn product(c: &mut Criterion) {
                     let zeros_view = insert_axes_first(&zeros, new_axes);
                     let ones_view = insert_axes_end(&ones, new_axes);
                     // Broadcasting the left hand side first.
-                    let zeros_view = zeros.broadcast(expected_card).unwrap();
+                    let zeros_view = zeros_view.broadcast(expected_card).unwrap();
                     let _array = &zeros_view * &ones_view;
                 },
             )
