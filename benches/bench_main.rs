@@ -4,7 +4,8 @@ extern crate ndarray;
 extern crate rand;
 
 use criterion::Criterion;
-use ndarray::{Array, ArrayBase, ArrayD, ArrayViewD, Axis};
+use ndarray::prelude::*;
+use ndarray::Zip;
 use rand::{Rand, Rng};
 
 /// Returns an array view with `n_axis` axes with length 1 at the start of the shape.
@@ -53,9 +54,11 @@ fn product(c: &mut Criterion) {
                     (left_view, right_view, expected_card.clone())
                 },
                 |(left_view, right_view, expected_card)| {
-                    // Broadcasting the left hand side first.
-                    let left_view = left_view.broadcast(expected_card).unwrap();
-                    let _array = &left_view * &right_view;
+                    let mut out = unsafe { ArrayD::<f64>::uninitialized(expected_card) };
+                    Zip::from(&mut out)
+                        .and_broadcast(&left_view)
+                        .and_broadcast(&right_view)
+                        .apply(|out, a, b| *out = a * b);
                 },
             )
         },
