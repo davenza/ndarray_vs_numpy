@@ -47,10 +47,12 @@ fn product(c: &mut Criterion) {
             // Expected cardinality of the product of the two arrays.
             let expected_card = vec![2; size + new_axes];
             b.iter_with_setup(
-                || (zeros.clone(), ones.clone(), expected_card.clone()),
-                |(zeros, ones, expected_card)| {
+                || {
                     let zeros_view = insert_axes_first(&zeros, new_axes);
                     let ones_view = insert_axes_end(&ones, new_axes);
+                    (zeros_view, ones_view, expected_card.clone())
+                },
+                |(zeros_view, ones_view, expected_card)| {
                     // Broadcasting the left hand side first.
                     let zeros_view = zeros_view.broadcast(expected_card).unwrap();
                     let _array = &zeros_view * &ones_view;
