@@ -8,7 +8,7 @@ use criterion::Criterion;
 use ndarray::prelude::*;
 use ndarray::Zip;
 use ndarray_rand::RandomExt;
-use rand::{Rand, distributions::Range};
+use rand::distributions::Range;
 
 fn product(c: &mut Criterion) {
     c.bench_function_over_inputs(
